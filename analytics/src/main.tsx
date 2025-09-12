@@ -2,7 +2,7 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import App from "./App";
-import "./tailwind.css";
+import "./index.css"; // ✅ 이것만 유지 (@import "tailwindcss" 포함)
 
 const qc = new QueryClient();
 
