@@ -1,13 +1,5 @@
+/* Tailwind v4 */
 @import "tailwindcss";
-
-html, body, #root { height: 100%; }
-body {
-  margin: 0;
-  background: #f6f7fb;      /* 은은한 회색 배경 */
-  color: #0f172a;           /* slate-900 */
-  font-family: "Noto Sans KR", "Inter", system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
-}
-a { color: inherit; text-decoration: none; }
 
 /* ──────────────────────────────────────────────
    Vite 기본 전역 스타일 수정본
@@ -17,29 +9,22 @@ a { color: inherit; text-decoration: none; }
    - 밝은 배경/글자색 적용
    ────────────────────────────────────────────── */
 
-
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
   color: inherit;
   background: transparent;
-
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
+html,
+body,
+#root {
+  height: 100%;
 }
 
 body {
@@ -57,7 +42,6 @@ a {
 }
 a:hover {
   color: inherit;
-
 }
 
 h1 {
@@ -71,7 +55,6 @@ button {
   font: inherit;
   background: transparent;
   cursor: pointer;
-
 }
 button:focus,
 button:focus-visible {
@@ -82,5 +65,4 @@ button:focus-visible {
   :root { }
   a:hover { }
   button { }
-
 }

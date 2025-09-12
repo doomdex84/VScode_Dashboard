@@ -2,8 +2,11 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import App from "./App";
-import "./index.css"; // ✅ 이것만 유지 (@import "tailwindcss" 포함)
 
+// Tailwind 레이어
+import "./tailwind.css";
+// 전역 커스텀 스타일 (Vite 기본 다크 배경 제거 등)
+import "./index.css";
 
 const qc = new QueryClient();
 

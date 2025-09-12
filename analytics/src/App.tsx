@@ -7,5 +7,4 @@ export default function App() {
     <AdminLayout>
       <AnalyticsDashboard />
     </AdminLayout>
-  );
-}
+  )}
