@@ -1,24 +1,4 @@
 {
-<<<<<<< HEAD
-  "name": "dashboard",
-  "version": "1.0.0",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ryuj7338/dashboard.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/ryuj7338/dashboard/issues"
-  },
-  "homepage": "https://github.com/ryuj7338/dashboard#readme",
-  "description": ""
-=======
   "name": "analytics",
   "private": true,
   "version": "0.0.0",
@@ -42,5 +22,4 @@
     "vite": "^5.4.0",
     "typescript": "^5.4.0"
   }
->>>>>>> cfe0016fc5d3b26fd1e049412ddec591206d3b2c
 }
