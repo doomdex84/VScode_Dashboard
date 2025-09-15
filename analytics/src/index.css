@@ -1,86 +1,57 @@
-@import "tailwindcss";
-
-html, body, #root { height: 100%; }
-body {
-  margin: 0;
-  background: #f6f7fb;      /* 은은한 회색 배경 */
-  color: #0f172a;           /* slate-900 */
-  font-family: "Noto Sans KR", "Inter", system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
-}
-a { color: inherit; text-decoration: none; }
-
-/* ──────────────────────────────────────────────
-   Vite 기본 전역 스타일 수정본
-   - 다크 배경 제거
-   - body flex/center 제거
-   - 링크/버튼 하드코딩 제거
-   - 밝은 배경/글자색 적용
-   ────────────────────────────────────────────── */
+/* Tailwind import는 기존 그대로 유지 */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color: inherit;
-  background: transparent;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+:root{
+  --bg: #f6f7fb;
+  --txt: #0f172a;
+  --muted: #6b7280;
+  --primary: #3b82f6;
 }
 
-
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
+html, body, #root {
+  height: 100%;
 }
 
 body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
-  background: #f8fafc; /* Tailwind gray-50 */
-  color: #0f172a;      /* Tailwind slate-900 */
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "맑은 고딕", sans-serif;
+  color: var(--txt);
 }
 
-a {
-  font-weight: 500;
-  color: inherit;
-  text-decoration: none;
-}
-a:hover {
-  color: inherit;
+/* 배경 */
+.bg-dashboard { background: var(--bg); }
 
-}
+/* 공용 톤 */
+.text-muted { color: var(--muted); }
+.text-primary { color: var(--primary); }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+/* 버튼 */
+.btn-primary {
+  @apply inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium text-white shadow-sm;
+  background: var(--primary);
 }
 
-button {
-  border: none;
-  padding: 0;
-  font: inherit;
-  background: transparent;
-  cursor: pointer;
-
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+.btn-ghost {
+  @apply inline-flex items-center justify-center w-9 h-9 rounded-lg hover:bg-gray-100;
 }
 
-@media (prefers-color-scheme: light) {
-  :root { }
-  a:hover { }
-  button { }
+/* 네비 아이템 */
+.nav-item {
+  @apply flex items-center gap-2 px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition;
+}
+.nav-item.active {
+  @apply bg-gray-100 font-semibold;
+}
 
+/* 선택 박스 */
+.select {
+  @apply h-9 rounded-lg border border-black/10 bg-white px-3 text-sm;
+}
+
+/* 칩 */
+.chip {
+  @apply text-xs rounded-lg px-2.5 py-1 bg-blue-50 text-blue-700 font-medium;
+}
+.chip-muted {
+  @apply bg-gray-100 text-gray-600;
 }
