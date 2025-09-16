@@ -7,6 +7,7 @@ import App from "./App";
 import "./tailwind.css"; // ⬅️ 반드시 먼저
 import "./index.css";    // ⬅️ 그다음 (커스텀 토큰/컴포넌트)
 
+
 const qc = new QueryClient();
 
 createRoot(document.getElementById("root")!).render(
