@@ -1,14 +1,11 @@
-/* src/index.css — 원하는 경우 */
-.btn {
-  @apply h-10 px-4 rounded-lg border border-black/10 bg-white hover:bg-gray-50;
-}
-.btn-primary {
-  @apply h-10 px-4 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700;
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-.btn-danger {
-  @apply h-10 px-4 rounded-lg bg-rose-600 text-white hover:bg-rose-700;
-}
-.btn-success {
-  @apply h-10 px-4 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700;
+/* DaisyUI의 .btn을 건드리지 않도록 prefix를 붙임 */
+@layer components {
+  .lb-btn        { @apply h-10 px-4 rounded-lg border border-black/10 bg-white hover:bg-gray-50; }
+  .lb-btn-primary{ @apply h-10 px-4 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700; }
+  .lb-btn-danger { @apply h-10 px-4 rounded-lg bg-rose-600 text-white hover:bg-rose-700; }
+  .lb-btn-success{ @apply h-10 px-4 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700; }
 }
