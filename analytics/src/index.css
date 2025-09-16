@@ -1,57 +1,14 @@
-/* Tailwind import는 기존 그대로 유지 */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
-
-:root{
-  --bg: #f6f7fb;
-  --txt: #0f172a;
-  --muted: #6b7280;
-  --primary: #3b82f6;
+/* src/index.css — 원하는 경우 */
+.btn {
+  @apply h-10 px-4 rounded-lg border border-black/10 bg-white hover:bg-gray-50;
 }
-
-html, body, #root {
-  height: 100%;
-}
-
-body {
-  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "맑은 고딕", sans-serif;
-  color: var(--txt);
-}
-
-/* 배경 */
-.bg-dashboard { background: var(--bg); }
-
-/* 공용 톤 */
-.text-muted { color: var(--muted); }
-.text-primary { color: var(--primary); }
-
-/* 버튼 */
 .btn-primary {
-  @apply inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium text-white shadow-sm;
-  background: var(--primary);
+  @apply h-10 px-4 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700;
 }
 
-.btn-ghost {
-  @apply inline-flex items-center justify-center w-9 h-9 rounded-lg hover:bg-gray-100;
+.btn-danger {
+  @apply h-10 px-4 rounded-lg bg-rose-600 text-white hover:bg-rose-700;
 }
-
-/* 네비 아이템 */
-.nav-item {
-  @apply flex items-center gap-2 px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition;
-}
-.nav-item.active {
-  @apply bg-gray-100 font-semibold;
-}
-
-/* 선택 박스 */
-.select {
-  @apply h-9 rounded-lg border border-black/10 bg-white px-3 text-sm;
-}
-
-/* 칩 */
-.chip {
-  @apply text-xs rounded-lg px-2.5 py-1 bg-blue-50 text-blue-700 font-medium;
-}
-.chip-muted {
-  @apply bg-gray-100 text-gray-600;
+.btn-success {
+  @apply h-10 px-4 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700;
 }
