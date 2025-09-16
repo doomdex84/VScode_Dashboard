@@ -10,16 +10,17 @@ export default function App() {
 
   function enter() {
     if (!initUrl.trim()) return;
+    // 시작하기 → 대시보드로만 이동 (모달은 열지 않음)
     setScreen("dashboard");
-    setOpenCreate(true);
   }
+
   function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Enter") enter();
   }
 
   return (
     <div className="min-h-screen">
-      {/* ── INTRO: 중앙 고정 + 인라인 폰트/레이아웃 폴백 ── */}
+      {/* ── INTRO ── */}
       {screen === "intro" && (
         <div
           className="fixed inset-0 grid place-items-center bg-gray-50 dark:bg-gray-900"
@@ -40,13 +41,11 @@ export default function App() {
               background: "white",
             }}
           >
-            {/* 제목: 2배 이상 크게 */}
             <h1
               className="text-center mb-12 dark:text-gray-100"
               style={{
                 fontWeight: 800,
                 lineHeight: 1.1,
-                // 모바일~데스크탑에서 크게 보이도록
                 fontSize: "clamp(42px, 8vw, 96px)",
                 color: "#0f172a",
                 textRendering: "optimizeLegibility",
@@ -55,7 +54,6 @@ export default function App() {
               링크보드 시작하기
             </h1>
 
-            {/* 입력 + 버튼(아래 줄) */}
             <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
               <input
                 type="url"
@@ -76,7 +74,6 @@ export default function App() {
                 }}
               />
 
-              {/* daisyUI 클래스 + 폴백 스타일(항상 보이게) */}
               <button
                 onClick={enter}
                 className="btn btn-ghost btn-xs sm:btn-sm md:btn-md lg:btn-lg xl:btn-xl"
@@ -104,7 +101,8 @@ export default function App() {
       {/* ── DASHBOARD ── */}
       {screen === "dashboard" && (
         <>
-          <Dashboard title="링크보드" onOpenCreate={() => setOpenCreate(true)} />
+          {/* title prop 제거! */}
+          <Dashboard onOpenCreate={() => setOpenCreate(true)} />
           {openCreate && (
             <LinkCreateModal
               defaultUrl={initUrl}
