@@ -1,7 +1,7 @@
 // src/features/link/LinkList.tsx
 import React, { useEffect, useMemo, useState } from "react";
 import { listLinks as listLocal, removeLinkLocal } from "./api.local";
-import { removeLink as removeServer, toShortUrl } from "./api.server";
+import { removeLink as removeServer, toShortUrl, toQrUrl } from "./api.server";
 import type { LinkItem } from "./types";
 import { QRCodeCanvas } from "qrcode.react";
 
@@ -19,12 +19,22 @@ export default function LinkList() {
   const [qr, setQr] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
 
+  // 짧은 링크(r/{slug}) 계산
   function computeShort(it: any): string {
-    // 레거시로 이미 shortUrl 저장한 경우 우선 사용
     if (typeof it.shortUrl === "string" && it.shortUrl.length > 0) return it.shortUrl;
-    // slug가 있으면 백엔드 호스트(8080)/r/{slug}로 계산
     if (typeof it.slug === "string" && it.slug.length > 0) return toShortUrl(it.slug);
-    // 아무것도 없으면 빈 문자열(표시만)
+    // slug/shortUrl 없으면 원문으로 폴백
+    if (typeof it.originalUrl === "string" && it.originalUrl.length > 0) return it.originalUrl;
+    return "";
+  }
+
+  // QR 링크(q/{slug}?m=poster&loc=entrance) 계산
+  function computeQr(it: any): string {
+    if (typeof it.slug === "string" && it.slug.length > 0) {
+      return toQrUrl(it.slug, { m: "poster", loc: "entrance" });
+    }
+    // slug 없으면 QR도 원문으로 폴백
+    if (typeof it.originalUrl === "string" && it.originalUrl.length > 0) return it.originalUrl;
     return "";
   }
 
@@ -102,7 +112,8 @@ export default function LinkList() {
         )}
 
         {filtered.map((it) => {
-          const short = it.shortUrlCalc;
+          const short = it.shortUrlCalc;            // 표시/복사용 /r/{slug}
+          const qrLink = computeQr(it);             // QR용 /q/{slug}?m=poster&loc=entrance
           return (
             <div key={it.id} className="py-4 flex flex-col md:flex-row md:items-center gap-3">
               <div className="min-w-0 flex-1">
@@ -135,8 +146,8 @@ export default function LinkList() {
 
                 <button
                   className="px-3 py-2 rounded border dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
-                  onClick={() => setQr(short || it.originalUrl)}
-                  disabled={!short && !it.originalUrl}
+                  onClick={() => setQr(qrLink)}
+                  disabled={!qrLink}
                 >
                   QR
                 </button>
@@ -167,19 +178,18 @@ export default function LinkList() {
           >
             <p className="mb-3 break-all text-sm text-gray-700 dark:text-gray-300">{qr}</p>
             <div className="flex justify-center">
-              <QRCodeCanvas value={qr} size={220} />
+              <QRCodeCanvas id="qr-modal-canvas" value={qr} size={220} />
             </div>
             <div className="mt-4 flex justify-end gap-2">
               <button
                 className="px-3 py-2 rounded border dark:border-gray-700"
                 onClick={() => {
-                  // 캔버스 저장
-                  const canvas = document.querySelector<HTMLCanvasElement>("#qr-modal-canvas") || null;
-                  const el = document.querySelector<HTMLCanvasElement>("canvas");
-                  const c = canvas || el;
-                  if (!c) return;
+                  const canvas =
+                    document.querySelector<HTMLCanvasElement>("#qr-modal-canvas") ||
+                    document.querySelector<HTMLCanvasElement>("canvas");
+                  if (!canvas) return;
                   const a = document.createElement("a");
-                  a.href = c.toDataURL("image/png");
+                  a.href = canvas.toDataURL("image/png");
                   a.download = "qr.png";
                   a.click();
                 }}
