@@ -235,7 +235,7 @@ const AnalyticsDashboard: React.FC<AnalyticsProps> = ({ embed = false, slug }) =
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-lg font-semibold" style={{ color: C.text }}>
-                  Analytics Dashboard
+                  통계
                 </h2>
               </div>
               <div className="flex items-center gap-3">
