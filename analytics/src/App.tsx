@@ -5,16 +5,15 @@ import LinkCreateModal from "./features/link/LinkCreateModal.tsx";
 
 export default function App() {
   const [screen, setScreen] = useState<"intro" | "dashboard">("intro");
-  const [initUrl, setInitUrl] = useState("");
+  const [initUrl] = useState(""); // 입력칸 제거로 현재는 사용 안 함
   const [openCreate, setOpenCreate] = useState(false);
 
   function enter() {
-    if (!initUrl.trim()) return;
-    // 시작하기 → 대시보드로만 이동 (모달은 열지 않음)
+    // 시작하기 → 대시보드로 이동
     setScreen("dashboard");
   }
 
-  function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+  function onKeyDown(e: React.KeyboardEvent<HTMLButtonElement>) {
     if (e.key === "Enter") enter();
   }
 
@@ -41,59 +40,35 @@ export default function App() {
               background: "white",
             }}
           >
+            {/* L/B 포인트 컬러 + 텍스트 그림자 */}
             <h1
-              className="text-center mb-12 dark:text-gray-100"
+              className="text-center mb-10 dark:text-gray-100"
               style={{
                 fontWeight: 800,
                 lineHeight: 1.1,
                 fontSize: "clamp(42px, 8vw, 96px)",
                 color: "#0f172a",
                 textRendering: "optimizeLegibility",
+                textShadow: "2px 2px 6px rgba(0,0,0,0.25)", // 텍스트 그림자 추가
               }}
             >
-              링크보드 시작하기
+              <span className="text-red-600">L</span>ING
+              <span className="text-red-600">B</span>O
             </h1>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-              <input
-                type="url"
-                value={initUrl}
-                onChange={(e) => setInitUrl(e.target.value)}
-                onKeyDown={onKeyDown}
-                placeholder="원문 링크를 입력하세요 (https://...)"
-                style={{
-                  width: "100%",
-                  height: 64,
-                  padding: "0 20px",
-                  fontSize: 22,
-                  borderRadius: 14,
-                  border: "1px solid #cbd5e1",
-                  background: "#f8fafc",
-                  color: "#0f172a",
-                  outline: "none",
-                }}
-              />
-
-              <button
-                onClick={enter}
-                className="btn btn-ghost btn-xs sm:btn-sm md:btn-md lg:btn-lg xl:btn-xl"
-                style={{
-                  display: "block",
-                  width: "100%",
-                  height: 64,
-                  fontSize: 22,
-                  fontWeight: 600,
-                  borderRadius: 14,
-                  border: "1px solid #cbd5e1",
-                  background: "white",
-                  color: "#0f172a",
-                  boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
-                  cursor: "pointer",
-                }}
-              >
-                시작하기
-              </button>
-            </div>
+            {/* 시작하기 버튼: 테두리 + 진한 그림자 */}
+            <button
+              onClick={enter}
+              onKeyDown={onKeyDown}
+              className="btn w-full h-16 text-xl font-semibold border border-gray-300 bg-white hover:bg-gray-50"
+              style={{
+                borderRadius: 14,
+                boxShadow: "0 4px 8px rgba(0,0,0,0.25)", // 버튼 그림자 강조
+                transition: "all 0.2s ease-in-out",
+              }}
+            >
+              시작하기
+            </button>
           </div>
         </div>
       )}
@@ -101,11 +76,41 @@ export default function App() {
       {/* ── DASHBOARD ── */}
       {screen === "dashboard" && (
         <>
-          {/* title prop 제거! */}
-          <Dashboard onOpenCreate={() => setOpenCreate(true)} />
+          {/* 상단 헤더 */}
+          <div className="w-full bg-base-100 shadow-sm">
+            <div className="mx-auto max-w-screen-2xl flex items-center justify-between px-4 py-3">
+              {/* 왼쪽: 아이콘 + 타이틀 */}
+              <div className="flex items-center gap-2 min-w-0">
+                {/* public/lingbo-logo.png 여야 함 */}
+                <img
+                  src="/lingbo-logo.png"
+                  alt="Lingbo Logo"
+                  className="h-8 w-8 md:h-9 md:w-9 object-contain"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).style.display = "none";
+                    console.warn("logo not found: /lingbo-logo.png");
+                  }}
+                />
+                <span className="text-lg font-semibold truncate">링크보드</span>
+              </div>
+
+              {/* 오른쪽: 링크 생성 버튼 */}
+              <button
+                className="btn btn-primary shrink-0"
+                onClick={() => setOpenCreate(true)}
+              >
+                링크 생성
+              </button>
+            </div>
+          </div>
+
+          {/* 본문 */}
+          <Dashboard />
+
+          {/* 링크 생성 모달 */}
           {openCreate && (
             <LinkCreateModal
-              defaultUrl={initUrl}
+              defaultUrl={initUrl} // 현재는 빈 값 전달
               onClose={() => setOpenCreate(false)}
             />
           )}
