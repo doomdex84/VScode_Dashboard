@@ -14,6 +14,7 @@ export type LogItem = {
 
 export type KV = { key: string; cnt: number };
 export type BrowserItem = { browser: string; cnt: number };
+
 export type TimeGranularity = "hour" | "dow" | "month";
 export type TimeBucket = { bucket: string; cnt: number };
 
