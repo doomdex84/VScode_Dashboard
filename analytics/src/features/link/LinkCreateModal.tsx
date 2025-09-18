@@ -1,192 +1,163 @@
 // src/features/link/LinkCreateModal.tsx
 import React, { useMemo, useState } from "react";
-import { createPortal } from "react-dom";
 import { QRCodeCanvas } from "qrcode.react";
-import { addLinkLocal, removeLinkLocal } from "./api.local";
-import {
-  createLink,
-  toShortUrl,
-  removeLink as removeServer,
-  // ❌ checkSlugExists 제거
-  toQrUrl,
-} from "./api.server";
+import { createLink, type LinkData } from "./api.server";
 
-type Props = { defaultUrl?: string; onClose: () => void };
-type FormState = { originalUrl: string; slug: string };
+type Props = { onClose: () => void };
 
-const pad = (n: number) => `${n}`.padStart(2, "0");
-const genSlug = () => {
-  const d = new Date();
-  return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}${pad(
-    d.getHours()
-  )}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
-};
-const sanitizeSlug = (s: string) =>
-  s.trim().replace(/^\/+/, "").replace(/\/+$/, "");
+const slugPattern = /^[A-Za-z0-9-_.~]+$/;
 
-function isHttp(url: string) {
-  try {
-    const u = new URL(url);
-    return u.protocol === "http:" || u.protocol === "https:";
-  } catch {
-    return false;
-  }
+// ✅ 공개용 베이스 도메인 계산 (env 우선, 없으면 dev에서 :8080, 배포는 현 origin)
+function getPublicOrigin() {
+  const env = import.meta.env.VITE_PUBLIC_ORIGIN as string | undefined;
+  if (env && env.trim()) return env.trim();
+
+  const { protocol, hostname, port } = window.location;
+  const isDevVite = port === "5173" || port === "5174";
+  if (isDevVite) return `${protocol}//${hostname}:8080`; // 로컬 개발 기본
+  return window.location.origin;
 }
 
-export default function LinkCreateModal({ defaultUrl = "", onClose }: Props) {
-  const [f, setF] = useState<FormState>({ originalUrl: defaultUrl, slug: "" });
-  const [loading, setLoading] = useState(false);
-  const [shortUrl, setShortUrl] = useState<string | null>(null);
-  const [qrUrl, setQrUrl] = useState<string | null>(null);
-  const [createdId, setCreatedId] = useState<number | null>(null);
-  const [createdSlug, setCreatedSlug] = useState<string | null>(null); // ✅ 추가
-  const [slugError, setSlugError] = useState<string | null>(null);
+export default function LinkCreateModal({ onClose }: Props) {
+  const [originalUrl, setOriginalUrl] = useState("");
+  const [slugInput, setSlugInput] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [link, setLink] = useState<LinkData | null>(null);
 
-  const disabled = useMemo(
-    () => loading || !isHttp(f.originalUrl),
-    [loading, f.originalUrl]
+  // 공개 도메인
+  const publicOrigin = useMemo(() => getPublicOrigin(), []);
+
+  // ✅ 짧은 링크(/r)와 QR용 링크(/q)를 각각 계산
+  const shortUrl = useMemo(
+    () => (link ? `${publicOrigin}/r/${link.slug}` : ""),
+    [link, publicOrigin]
+  );
+  const qrUrl = useMemo(
+    () => (link ? `${publicOrigin}/q/${link.slug}?m=poster&loc=entrance` : ""),
+    [link, publicOrigin]
   );
 
-  const analyticsHref = useMemo(
-    () => (createdSlug ? `/?slug=${encodeURIComponent(createdSlug)}` : null),
-    [createdSlug]
-  );
-
-  async function onCreate() {
-    if (disabled) return;
-    setLoading(true);
-    setSlugError(null);
+  const validate = () => {
+    if (!originalUrl.trim()) return "원본 URL을 입력하세요.";
     try {
-      const desired = sanitizeSlug(f.slug);
-      const resp = await createLink({
-        originalUrl: f.originalUrl,
-        slug: desired || undefined,
-      });
-
-      if ((resp as any)?.error === "SLUG_ALREADY_TAKEN") {
-        setSlugError("이미 사용 중인 슬러그입니다. 다른 값을 입력하세요.");
-        return;
-      }
-      if ((resp as any)?.error) {
-        alert("링크 생성 중 오류가 발생했습니다.");
-        return;
-      }
-
-      // 서버가 slug를 안 내려주면 폴백 생성
-      let slug = (resp as any)?.slug as string | undefined;
-      if (!slug) slug = desired || genSlug();
-
-      // ✅ 존재 확인(HEAD) 없이, 바로 /r, /q 링크를 만든다
-      const short = toShortUrl(slug);
-      const qr = toQrUrl(slug, { m: "poster", loc: "entrance" });
-
-      // ✅ 대시보드 폴백용으로 저장
-      localStorage.setItem("lastSlug", slug);
-      setCreatedSlug(slug);
-
-      // 로컬 목록에도 저장
-      const saved = addLinkLocal({
-        originalUrl: f.originalUrl,
-        shortUrl: short,
-        slug,
-        url: short, // 레거시 호환
-      }) as any;
-
-      setCreatedId(saved?.id ?? null);
-      setShortUrl(short);
-      setQrUrl(qr);
-    } finally {
-      setLoading(false);
+      new URL(originalUrl.trim());
+    } catch {
+      return "올바른 URL이 아닙니다.";
     }
-  }
+    if (slugInput && !slugPattern.test(slugInput)) {
+      return "슬러그는 영문/숫자/.-_~ 만 가능합니다.";
+    }
+    return null;
+  };
 
-  async function onDelete() {
-    if (createdId != null) removeLinkLocal(createdId);
+  const handleCreate = async () => {
+    const v = validate();
+    if (v) return setError(v);
+    setError(null);
+    setCreating(true);
     try {
-      await removeServer(createdId ?? "");
-    } catch {}
-    setShortUrl(null);
-    setQrUrl(null);
-    setCreatedId(null);
-    setCreatedSlug(null);
-  }
+      const data = await createLink({
+        originalUrl: originalUrl.trim(),
+        slug: slugInput.trim() || null, // 비우면 서버 자동 생성
+      });
+      setLink(data);
+    } catch (e: any) {
+      setError(e?.message || "링크 생성 실패");
+    } finally {
+      setCreating(false);
+    }
+  };
 
-  function openAnalytics() {
-    if (!createdSlug) return;
-    const href = analyticsHref ?? `/?slug=${encodeURIComponent(createdSlug)}`;
-    window.location.href = href;
-  }
+  const handleCopy = async () => {
+    if (!shortUrl) return;
+    await navigator.clipboard.writeText(shortUrl);
+    alert("짧은 링크가 복사되었습니다.");
+  };
 
-  const modal = (
-    <div
-      className="fixed inset-0 z-[1000] bg-white/80 flex items-center justify-center p-4"
-      role="dialog"
-      aria-modal="true"
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-lg bg-white rounded-2xl shadow-xl p-6 space-y-5"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between">
-          <h3 className="font-bold">링크 생성</h3>
+  return (
+    <div className="fixed inset-0 grid place-items-center bg-black/40 z-50">
+      {/* 모달 박스 하늘색 배경 유지 */}
+      <div className="w-[540px] rounded-2xl shadow-xl p-6" style={{ backgroundColor: "#ffffffff" }}>
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-xl font-semibold">링크 생성</h2>
+          <button onClick={onClose} className="px-3 py-1 rounded hover:bg-gray-100">닫기</button>
+        </div>
+
+        {/* 원본 URL */}
+        <label className="block text-sm font-medium mb-1">원본 URL</label>
+        <input
+          value={originalUrl}
+          onChange={(e) => setOriginalUrl(e.target.value)}
+          placeholder="https://example.com/..."
+          className="w-full border rounded-lg px-3 py-2 mb-4 bg-white"
+        />
+
+        {/* 슬러그 (선택) */}
+        <label className="block text-sm font-medium mb-1">
+          슬러그 (선택) <span className="text-xs text-gray-700 ml-1">비워두면 자동 생성</span>
+        </label>
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-gray-800">/r/</span>
+          <input
+            value={slugInput}
+            onChange={(e) => setSlugInput(e.target.value)}
+            placeholder="my-campaign-2025"
+            className="flex-1 border rounded-lg px-3 py-2 bg-white"
+          />
+        </div>
+        <p className="text-xs text-gray-700 mb-4">허용: 영문/숫자/.-_~</p>
+
+        {/* 에러 */}
+        {error && (
+          <div className="mb-4 rounded-lg bg-red-50 text-red-700 px-3 py-2 whitespace-pre-wrap">
+            {error}
+          </div>
+        )}
+
+        {/* 버튼 */}
+        <div className="flex justify-end gap-2 mb-6">
           <button
-            className="px-2 py-1 rounded border border-gray-300 hover:bg-gray-50"
-            onClick={onClose}
+            onClick={handleCreate}
+            disabled={creating}
+            className="px-4 py-2 rounded-lg bg-blue-600 text-white disabled:opacity-60"
           >
-            닫기
+            {creating ? "생성 중..." : "링크 생성"}
           </button>
         </div>
 
-        <div className="space-y-4">
-          {/* 원문 URL */}
-          <div className="space-y-1">
-            <label className="text-sm font-medium">원문 URL</label>
-            <input
-              type="url"
-              value={f.originalUrl}
-              onChange={(e) =>
-                setF((s) => ({ ...s, originalUrl: e.target.value }))
-              }
-              placeholder="https://example.com/..."
-              className="w-full h-11 rounded-lg border border-gray-300 bg-white px-3 outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-            {!f.originalUrl ? (
-              <p className="text-xs text-gray-500">필수 입력</p>
-            ) : !isHttp(f.originalUrl) ? (
-              <p className="text-xs text-rose-600">http/https 주소가 아닙니다.</p>
-            ) : null}
-          </div>
-
-          {/* 슬러그 (선택) */}
-          <div className="space-y-1">
-            <label className="text-sm font-medium">슬러그 (선택)</label>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-500">/r/</span>
-              <input
-                value={f.slug}
-                onChange={(e) => setF((s) => ({ ...s, slug: e.target.value }))}
-                placeholder="my-campaign-2025"
-                className={`flex-1 h-11 rounded-lg border px-3 outline-none focus:ring-2 ${
-                  slugError
-                    ? "border-rose-600 focus:ring-rose-500"
-                    : "border-gray-300 focus:ring-indigo-500"
-                }`}
-              />
+        {/* 결과 */}
+        {link && (
+          <div className="grid grid-cols-2 gap-4 items-center">
+            <div className="flex flex-col items-center gap-3">
+              {/* ✅ QR은 /q/{slug}?m=poster&loc=entrance 로 생성 */}
+              <QRCodeCanvas value={qrUrl} size={180} includeMargin />
+              <button onClick={handleCopy} className="px-4 py-2 rounded-lg bg-emerald-600 text-white">
+                링크 복사
+              </button>
             </div>
-            {slugError ? (
-              <p className="text-xs text-rose-600">{slugError}</p>
-            ) : (
-              <p className="text-xs text-gray-500">
-                비워두면 자동 생성됩니다. (영문/숫자/-/_ 권장)
-              </p>
-            )}
-          </div>
+            <div className="text-sm">
+              <p className="text-gray-800 mb-1">짧은 링크</p>
+              <a
+                href={shortUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-blue-800 underline break-all"
+              >
+                {shortUrl}
+              </a>
 
-          {/* QR 미리보기 */}
-          {qrUrl && (
-            <div className="grid place-items-center gap-2">
-              <QRCodeCanvas id="qr-preview" value={qrUrl} size={160} />
+              <p className="text-gray-800 mt-4 mb-1">원본 URL</p>
+              <a
+                href={link.originalUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="underline break-all"
+              >
+                {link.originalUrl}
+              </a>
+
+              <p className="text-gray-800 mt-4 mb-1">QR 링크</p>
               <a
                 href={qrUrl}
                 target="_blank"
@@ -196,39 +167,9 @@ export default function LinkCreateModal({ defaultUrl = "", onClose }: Props) {
                 {qrUrl}
               </a>
             </div>
-          )}
-        </div>
-
-        {/* 하단 버튼: 생성/복사 + 분석 보기 + 삭제 */}
-        <div className="flex items-center justify-end gap-2">
-          <button
-            onClick={shortUrl ? () => navigator.clipboard.writeText(shortUrl!) : onCreate}
-            disabled={disabled && !shortUrl}
-            className="px-4 py-2 rounded-lg border border-gray-300 bg-emerald-600 text-white disabled:opacity-50"
-          >
-            {shortUrl ? "링크 복사" : loading ? "생성중..." : "링크 생성(+QR)"}
-          </button>
-
-          {createdSlug && (
-            <button
-              onClick={openAnalytics}
-              className="px-4 py-2 rounded-lg border border-gray-300 bg-slate-700 text-white"
-              title="이 링크의 통계 보기"
-            >
-              분석 보기
-            </button>
-          )}
-
-          <button
-            onClick={onDelete}
-            className="px-4 py-2 rounded-lg border border-gray-300 bg-rose-600 text-white"
-          >
-            링크 삭제
-          </button>
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
-
-  return createPortal(modal, document.body);
 }
