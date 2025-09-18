@@ -7,7 +7,7 @@ import {
   createLink,
   toShortUrl,
   removeLink as removeServer,
-  checkSlugExists,
+  // ❌ checkSlugExists 제거
   toQrUrl,
 } from "./api.server";
 
@@ -39,11 +39,17 @@ export default function LinkCreateModal({ defaultUrl = "", onClose }: Props) {
   const [shortUrl, setShortUrl] = useState<string | null>(null);
   const [qrUrl, setQrUrl] = useState<string | null>(null);
   const [createdId, setCreatedId] = useState<number | null>(null);
+  const [createdSlug, setCreatedSlug] = useState<string | null>(null); // ✅ 추가
   const [slugError, setSlugError] = useState<string | null>(null);
 
   const disabled = useMemo(
     () => loading || !isHttp(f.originalUrl),
     [loading, f.originalUrl]
+  );
+
+  const analyticsHref = useMemo(
+    () => (createdSlug ? `/?slug=${encodeURIComponent(createdSlug)}` : null),
+    [createdSlug]
   );
 
   async function onCreate() {
@@ -54,7 +60,7 @@ export default function LinkCreateModal({ defaultUrl = "", onClose }: Props) {
       const desired = sanitizeSlug(f.slug);
       const resp = await createLink({
         originalUrl: f.originalUrl,
-        slug: desired || undefined, // 서버가 지원하면 사용
+        slug: desired || undefined,
       });
 
       if ((resp as any)?.error === "SLUG_ALREADY_TAKEN") {
@@ -70,19 +76,19 @@ export default function LinkCreateModal({ defaultUrl = "", onClose }: Props) {
       let slug = (resp as any)?.slug as string | undefined;
       if (!slug) slug = desired || genSlug();
 
-      // /r/{slug}가 실제 리다이렉트 되는지 확인(3xx면 OK)
-      const exists = await checkSlugExists(slug);
+      // ✅ 존재 확인(HEAD) 없이, 바로 /r, /q 링크를 만든다
+      const short = toShortUrl(slug);
+      const qr = toQrUrl(slug, { m: "poster", loc: "entrance" });
 
-      // 표시/복사용 단축 링크는 /r/{slug}
-      const short = exists ? toShortUrl(slug) : f.originalUrl;
-      // QR은 /q/{slug}?m=poster&loc=entrance
-      const qr = exists ? toQrUrl(slug, { m: "poster", loc: "entrance" }) : f.originalUrl;
+      // ✅ 대시보드 폴백용으로 저장
+      localStorage.setItem("lastSlug", slug);
+      setCreatedSlug(slug);
 
-      // 로컬에도 저장(기존 필드 유지)
+      // 로컬 목록에도 저장
       const saved = addLinkLocal({
         originalUrl: f.originalUrl,
         shortUrl: short,
-        slug: exists ? slug : undefined,
+        slug,
         url: short, // 레거시 호환
       }) as any;
 
@@ -102,6 +108,13 @@ export default function LinkCreateModal({ defaultUrl = "", onClose }: Props) {
     setShortUrl(null);
     setQrUrl(null);
     setCreatedId(null);
+    setCreatedSlug(null);
+  }
+
+  function openAnalytics() {
+    if (!createdSlug) return;
+    const href = analyticsHref ?? `/?slug=${encodeURIComponent(createdSlug)}`;
+    window.location.href = href;
   }
 
   const modal = (
@@ -170,7 +183,7 @@ export default function LinkCreateModal({ defaultUrl = "", onClose }: Props) {
             )}
           </div>
 
-          {/* QR 미리보기 (항상 /q/{slug}?m=poster&loc=entrance) */}
+          {/* QR 미리보기 */}
           {qrUrl && (
             <div className="grid place-items-center gap-2">
               <QRCodeCanvas id="qr-preview" value={qrUrl} size={160} />
@@ -186,7 +199,7 @@ export default function LinkCreateModal({ defaultUrl = "", onClose }: Props) {
           )}
         </div>
 
-        {/* 하단 버튼: 생성/복사 → 삭제 */}
+        {/* 하단 버튼: 생성/복사 + 분석 보기 + 삭제 */}
         <div className="flex items-center justify-end gap-2">
           <button
             onClick={shortUrl ? () => navigator.clipboard.writeText(shortUrl!) : onCreate}
@@ -195,6 +208,17 @@ export default function LinkCreateModal({ defaultUrl = "", onClose }: Props) {
           >
             {shortUrl ? "링크 복사" : loading ? "생성중..." : "링크 생성(+QR)"}
           </button>
+
+          {createdSlug && (
+            <button
+              onClick={openAnalytics}
+              className="px-4 py-2 rounded-lg border border-gray-300 bg-slate-700 text-white"
+              title="이 링크의 통계 보기"
+            >
+              분석 보기
+            </button>
+          )}
+
           <button
             onClick={onDelete}
             className="px-4 py-2 rounded-lg border border-gray-300 bg-rose-600 text-white"
