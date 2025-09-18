@@ -52,8 +52,8 @@ export default function App() {
                 textShadow: "2px 2px 6px rgba(0,0,0,0.25)", // 텍스트 그림자 추가
               }}
             >
-              <span className="text-red-600">L</span>ING
-              <span className="text-red-600">B</span>O
+              <span className="text-blue-600">L</span>ING
+              <span className="text-blue-600">B</span>O
             </h1>
 
             {/* 시작하기 버튼: 테두리 + 진한 그림자 */}
