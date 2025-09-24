@@ -28,7 +28,7 @@ export default function Dashboard() {
       {/* 링크 목록 섹션 (기존 디자인 유지 + 다크 지원) */}
       <section
         className={`p-6 md:p-8 shadow border transition-colors
-        ${isDark ? "bg-gray-900 border-gray-700 text-gray-100" : "bg-white border-gray-200 text-gray-900"}`}
+        ${isDark ? "bg-gray-900 border-gray-700 text-gray-100" : "bg-[rgb(248,250,252)] border-gray-200 text-gray-900"}`}
       >
         <LinkList isDark={isDark} />
       </section>

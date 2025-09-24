@@ -53,7 +53,7 @@ const DARK = {
   grid:   "#1f2937",
   axis:   "#e2e8f0",
   text:   "#e6edf7",
-  page:   "#0b1220",
+  page:   "#111827",
   panel:  "#141f2f",
   border: "#2a3b55",
 };
@@ -196,7 +196,7 @@ const AnalyticsDashboard: React.FC<AnalyticsProps> = ({ embed=false, slug, isDar
     (async () => {
       try {
         if (!effectiveSlug) {
-          setError("링크를 생성하세요");
+          setError("저장된 링크가 없다면 '링크 생성'으로 새 링크를 만들고, 이미 링크가 있다면 목록에서 선택해 분석하세요.");
           setLineData([]); setHourData([]); setChannelData([]); setDeviceData([]); return;
         }
         setError(null);
@@ -305,7 +305,7 @@ const AnalyticsDashboard: React.FC<AnalyticsProps> = ({ embed=false, slug, isDar
             <div
               className="mb-4 rounded-md p-3 text-sm"
               style={{
-                background: isDark ? "#261d1d" : "#FEF2F2",
+                background: isDark ? "#3c3434ff" : "#FEF2F2",
                 color: isDark ? "#fecaca" : "#991b1b",
                 border: `1px solid ${isDark ? "#7f1d1d" : "#FCA5A5"}`,
               }}
