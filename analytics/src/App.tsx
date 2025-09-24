@@ -1,16 +1,45 @@
 // src/App.tsx
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Dashboard from "./features/link/Dashboard.tsx";
 import LinkCreateModal from "./features/link/LinkCreateModal.tsx";
 
+/** 쿼리스트링에서 screen을 읽어오기 */
+function getScreenFromQuery(): "intro" | "dashboard" | null {
+  try {
+    const sp = new URLSearchParams(window.location.search);
+    const v = sp.get("screen");
+    if (v === "intro" || v === "dashboard") return v;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export default function App() {
-  const [screen, setScreen] = useState<"intro" | "dashboard">("intro");
+  // ✅ 초기값: 1) URL ?screen=... 2) sessionStorage 3) fallback "intro"
+  const initialScreen = useMemo<"intro" | "dashboard">(() => {
+    const fromQuery = getScreenFromQuery();
+    if (fromQuery) return fromQuery;
+    const saved = sessionStorage.getItem("screen");
+    return saved === "dashboard" ? "dashboard" : "intro";
+  }, []);
+
+  const [screen, setScreen] = useState<"intro" | "dashboard">(initialScreen);
   const [initUrl] = useState(""); // 입력칸 제거로 현재는 사용 안 함
   const [openCreate, setOpenCreate] = useState(false);
 
+  /** ✅ 화면 상태를 sessionStorage에 저장 (새로고침 복원용) */
+  useEffect(() => {
+    sessionStorage.setItem("screen", screen);
+  }, [screen]);
+
+  /** 시작하기 → 대시보드로 이동 (+ URL에도 반영해서 공유 가능) */
   function enter() {
-    // 시작하기 → 대시보드로 이동
     setScreen("dashboard");
+    const sp = new URLSearchParams(window.location.search);
+    sp.set("screen", "dashboard");
+    const next = `${window.location.pathname}?${sp.toString()}`;
+    window.history.replaceState({}, "", next);
   }
 
   function onKeyDown(e: React.KeyboardEvent<HTMLButtonElement>) {
@@ -40,7 +69,6 @@ export default function App() {
               background: "white",
             }}
           >
-            {/* L/B 포인트 컬러 + 텍스트 그림자 */}
             <h1
               className="text-center mb-10 dark:text-gray-100"
               style={{
@@ -49,21 +77,20 @@ export default function App() {
                 fontSize: "clamp(42px, 8vw, 96px)",
                 color: "#0f172a",
                 textRendering: "optimizeLegibility",
-                textShadow: "2px 2px 6px rgba(0,0,0,0.25)", // 텍스트 그림자 추가
+                textShadow: "2px 2px 6px rgba(0,0,0,0.25)",
               }}
             >
               <span className="text-blue-600">L</span>ING
               <span className="text-blue-600">B</span>O
             </h1>
 
-            {/* 시작하기 버튼: 테두리 + 진한 그림자 */}
             <button
               onClick={enter}
               onKeyDown={onKeyDown}
               className="btn w-full h-16 text-xl font-semibold border border-gray-300 bg-white hover:bg-gray-50"
               style={{
                 borderRadius: 14,
-                boxShadow: "0 4px 8px rgba(0,0,0,0.25)", // 버튼 그림자 강조
+                boxShadow: "0 4px 8px rgba(0,0,0,0.25)",
                 transition: "all 0.2s ease-in-out",
               }}
             >
@@ -110,7 +137,7 @@ export default function App() {
           {/* 링크 생성 모달 */}
           {openCreate && (
             <LinkCreateModal
-              defaultUrl={initUrl} // 현재는 빈 값 전달
+              defaultUrl={initUrl}
               onClose={() => setOpenCreate(false)}
             />
           )}

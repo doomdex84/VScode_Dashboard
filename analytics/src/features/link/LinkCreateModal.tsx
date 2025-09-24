@@ -1,15 +1,15 @@
 import React, { useMemo, useState } from "react";
 import { QRCodeCanvas } from "qrcode.react";
-import { createLink } from "./api.server"; // ← LinkData는 여기서 import 안함 (로컬 선언)
+import { createLink } from "./api.server"; // ← 서버 호출
+import { addLinkLocal } from "./api.local"; // ✅ 추가: 생성 성공 시 로컬 목록에 반영
 
 type Props = {
   onClose: () => void;
-  defaultUrl?: string;            // ← 추가
-  onCreated?: (link: LinkData) => void; // (쓰는 중이면 유지)
+  defaultUrl?: string; // (기존 주석 유지)
+  onCreated?: (link: LinkData) => void; // ✅ 추가: 부모가 목록 즉시 갱신할 수 있게
 };
 
-
-// 서버 응답 형태(로컬 선언: api.server.ts에서 굳이 export 안 해도 됨)
+// 서버 응답 형태(로컬 선언: api.server.ts에서 export 안 해도 됨)
 type LinkData = {
   id: number;
   slug: string;
@@ -32,8 +32,12 @@ function getPublicOrigin() {
   return window.location.origin;
 }
 
-export default function LinkCreateModal({ onClose }: Props) {
-  const [originalUrl, setOriginalUrl] = useState("");
+export default function LinkCreateModal({
+  onClose,
+  defaultUrl = "",
+  onCreated,
+}: Props) {
+  const [originalUrl, setOriginalUrl] = useState(defaultUrl);
   const [slugInput, setSlugInput] = useState("");
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -69,7 +73,7 @@ export default function LinkCreateModal({ onClose }: Props) {
     setError(null);
     setCreating(true);
     try {
-      // ✅ payload에서 slug는 비었으면 아예 넣지 않는다 (null 금지)
+      // ✅ payload에서 slug는 비었으면 아예 넣지 않는다 (null/"" 금지)
       const payload: { originalUrl: string; slug?: string } = {
         originalUrl: originalUrl.trim(),
       };
@@ -77,7 +81,24 @@ export default function LinkCreateModal({ onClose }: Props) {
       if (vslug) payload.slug = vslug;
 
       const data: LinkData = await createLink(payload);
+
+      // 상태 반영
       setLink(data);
+
+      // ✅ 생성 직후 로컬스토리지 목록에도 즉시 반영
+      //    (api.local의 addLinkLocal이 id/createdAt 등을 채워주지 않는다면 여기서 함께 넘겨줌)
+      addLinkLocal({
+        slug: data.slug,
+        originalUrl: data.originalUrl,
+    
+      });
+
+      // ✅ 부모 콜백: LinkList에서 reload() 하도록 신호
+      onCreated?.(data);
+
+      // 폼 정리 (원하면 originalUrl은 유지 가능)
+      setSlugInput("");
+      // setOriginalUrl(""); // 유지 원하면 주석 유지
     } catch (e: any) {
       setError(e?.message || "링크 생성 실패");
     } finally {
@@ -94,10 +115,18 @@ export default function LinkCreateModal({ onClose }: Props) {
   return (
     <div className="fixed inset-0 grid place-items-center bg-black/40 z-50">
       {/* 모달 박스 배경: 하늘색 */}
-      <div className="w-[540px] rounded-2xl shadow-xl p-6" style={{ backgroundColor: "#ffffffff" }}>
+      <div
+        className="w-[540px] rounded-2xl shadow-xl p-6"
+        style={{ backgroundColor: "#ffffffff" }}
+      >
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-xl font-semibold">링크 생성</h2>
-          <button onClick={onClose} className="px-3 py-1 rounded hover:bg-gray-100">닫기</button>
+          <button
+            onClick={onClose}
+            className="px-3 py-1 rounded hover:bg-gray-100"
+          >
+            닫기
+          </button>
         </div>
 
         <label className="block text-sm font-medium mb-1">원본 URL</label>
@@ -109,7 +138,8 @@ export default function LinkCreateModal({ onClose }: Props) {
         />
 
         <label className="block text-sm font-medium mb-1">
-          슬러그 (선택) <span className="text-xs text-gray-700 ml-1">비워두면 자동 생성</span>
+          슬러그 (선택){" "}
+          <span className="text-xs text-gray-700 ml-1">비워두면 자동 생성</span>
         </label>
         <div className="flex items-center gap-2 mb-2">
           <span className="text-gray-800">/r/</span>
@@ -143,23 +173,41 @@ export default function LinkCreateModal({ onClose }: Props) {
             <div className="flex flex-col items-center gap-3">
               {/* ✅ QR은 /q/{slug}?m=poster&loc=entrance */}
               <QRCodeCanvas value={qrUrl} size={180} includeMargin />
-              <button onClick={handleCopy} className="px-4 py-2 rounded-lg bg-emerald-600 text-white">
+              <button
+                onClick={handleCopy}
+                className="px-4 py-2 rounded-lg bg-emerald-600 text-white"
+              >
                 링크 복사
               </button>
             </div>
             <div className="text-sm">
               <p className="text-gray-800 mb-1">짧은 링크</p>
-              <a href={shortUrl} target="_blank" rel="noreferrer" className="text-blue-800 underline break-all">
+              <a
+                href={shortUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-blue-800 underline break-all"
+              >
                 {shortUrl}
               </a>
 
               <p className="text-gray-800 mt-4 mb-1">원본 URL</p>
-              <a href={link.originalUrl} target="_blank" rel="noreferrer" className="underline break-all">
+              <a
+                href={link.originalUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="underline break-all"
+              >
                 {link.originalUrl}
               </a>
 
               <p className="text-gray-800 mt-4 mb-1">QR 링크</p>
-              <a href={qrUrl} target="_blank" rel="noreferrer" className="underline break-all">
+              <a
+                href={qrUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="underline break-all"
+              >
                 {qrUrl}
               </a>
             </div>

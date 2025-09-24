@@ -196,7 +196,7 @@ const AnalyticsDashboard: React.FC<AnalyticsProps> = ({ embed=false, slug, isDar
     (async () => {
       try {
         if (!effectiveSlug) {
-          setError("링크 식별자(slug)가 없습니다. URL에 ?slug=... 또는 /analytics/:slug 형태로 열어주세요.");
+          setError("링크를 생성하세요");
           setLineData([]); setHourData([]); setChannelData([]); setDeviceData([]); return;
         }
         setError(null);

@@ -108,6 +108,10 @@ export default function LinkList({ isDark = false }: { isDark?: boolean }) {
             // @ts-ignore
             isOpen={createOpen}
             onClose={() => setCreateOpen(false)}
+            onCreated={() => {         {/* ✅ 추가: 생성 후 즉시 목록 갱신 */}
+              reload();
+              setCreateOpen(false);
+            }}
           />
         )}
       </>
@@ -215,7 +219,7 @@ export default function LinkList({ isDark = false }: { isDark?: boolean }) {
         })}
       </div>
 
-      {/* QR 모달 (기존 그대로) */}
+      {/* QR 모달 (기존 유지) */}
       {qr && (
         <div
           className="fixed inset-0 bg-black/60 z-40 flex items-center justify-center p-4"
@@ -265,6 +269,10 @@ export default function LinkList({ isDark = false }: { isDark?: boolean }) {
           // @ts-ignore
           isOpen={createOpen}
           onClose={() => setCreateOpen(false)}
+          onCreated={() => {        /* ✅ 추가: 생성 후 즉시 목록 갱신 */
+            reload();
+            setCreateOpen(false);
+          }}
         />
       )}
     </section>
